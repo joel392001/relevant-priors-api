@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI()
+app = FastAPI(max_request_size=50 * 1024 * 1024)
 
 # -------------------- SCHEMA --------------------
 
@@ -96,7 +96,7 @@ def predict(payload: RequestBody):
 
         prior_texts = [normalize(p.study_description) for p in case.prior_studies]
 
-        # ✅ ONE TF-IDF per case (optimal)
+        # ✅ ONE TF-IDF per case 
         sim_scores = compute_similarities(cur, prior_texts)
 
         for i, prior in enumerate(case.prior_studies):
@@ -110,20 +110,20 @@ def predict(payload: RequestBody):
 
             relevant = False
 
-            # ✅ Rule 1: strongest
+            # Rule 1: strongest
             if same_modality and same_body:
                 relevant = True
 
-            # ✅ Rule 2: brain/head mapping
+            # Rule 2: brain/head mapping
             elif ("brain" in cur and "head" in prev) or ("head" in cur and "brain" in prev):
                 if age < 5:
                     relevant = True
 
-            # ❌ Rule 3: too old
+            #  Rule 3: too old
             elif age > 12:
                 relevant = False
 
-            # ✅ Rule 4: semantic similarity
+            # Rule 4: semantic similarity
             elif sim_scores[i] > 0.55:
                 relevant = True
 
